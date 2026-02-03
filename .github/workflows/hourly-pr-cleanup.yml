@@ -43,7 +43,9 @@ jobs:
                 body: reason
               });
 
-              await github.rest.pulls.update({ owner, repo, pull_number: pr.number, state: "closed" });
+              await github.rest.pulls.update({
+                owner, repo, pull_number: pr.number, state: "closed"
+              });
 
               if (!pr.head.repo || pr.head.repo.full_name === `${owner}/${repo}`) {
                 const ref = `heads/${pr.head.ref}`;
