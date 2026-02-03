@@ -13,7 +13,7 @@ jobs:
   cleanup-seed-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Close only old seeded PRs (>=12h)
+      - name: Close non-seed PRs hourly; close seed PRs only after 12h
         uses: actions/github-script@v7
         with:
           script: |
@@ -28,15 +28,19 @@ jobs:
 
             for (const pr of pulls) {
               const labels = (pr.labels || []).map(l => l.name);
-              if (!labels.includes(seedLabel)) continue;
+              const isSeed = labels.includes(seedLabel);
 
               const created = new Date(pr.created_at);
               const ageHours = (now - created) / (1000 * 60 * 60);
-              if (ageHours < 12) continue;
+              if (isSeed && ageHours < 12) continue;
+
+              const reason = isSeed
+                ? "Auto-closed by hourly cleanup after 12h seed lifetime."
+                : "Auto-closed by hourly cleanup (non-seed PR).";
 
               await github.rest.issues.createComment({
                 owner, repo, issue_number: pr.number,
-                body: "Auto-closed by hourly cleanup after 12h seed lifetime."
+                body: reason
               });
 
               await github.rest.pulls.update({ owner, repo, pull_number: pr.number, state: "closed" });
